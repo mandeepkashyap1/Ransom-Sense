@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OK Sentinel — Real-Time File Download Security Watcher & Automated Threat Mitigation Studio</title>
+  <meta name="description" content="OK Sentinel is a next-generation real-time file download security watcher, heuristic malware scanner, Shannon entropy analyzer, and automated threat quarantine workflow studio for SOC teams.">
+  <meta name="keywords" content="file security, malware scanner, ransomware detection, Shannon entropy, threat quarantine, SOC, SIEM, heuristic analysis">
+  <meta name="author" content="OK Sentinel Security Labs">
+  <meta name="theme-color" content="#07090e">
+  <!-- Inline SVG Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%2300f2fe'/%3E%3Cstop offset='100%25' stop-color='%237000ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='%2307090e'/%3E%3Cpath d='M32 12 L52 24 L52 40 L32 52 L12 40 L12 24 Z' fill='url(%23g)' opacity='0.9'/%3E%3Cpath d='M32 20 L32 36 M26 28 L38 28' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+<div id="app-container">
+  
+  <!-- =========================================
+       1. HEADER BAR
+       ========================================= -->
+  <header class="glass-panel" role="banner" aria-label="OK Sentinel main toolbar">
+    <div class="brand-section">
+      <div class="brand-logo" id="app-logo" title="OK Sentinel — File Security Operations Center" aria-label="OK Sentinel logo">
+        <i class="fa-solid fa-shield-virus"></i>
+      </div>
+      <div class="brand-title">
+        <input type="text" id="workflow-name" class="workflow-name-input" value="Real-Time File Download Security Watcher & Threat Quarantine Flow" title="Click to rename this security blueprint" aria-label="Security blueprint name">
+        <div class="workflow-status-badge">
+          <span class="status-dot idle" id="global-status-dot" aria-hidden="true"></span>
+          <span id="global-status-text" aria-live="polite">Watcher Engine Active</span>
+          <span class="watcher-path-tag" title="Actively monitored file system paths">
+            <i class="fa-solid fa-folder-shield" aria-hidden="true"></i> C:\Users\Mande\Downloads &amp; ./monitored_downloads
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Security Stats HUD Bar -->
+    <div class="header-hud-stats" role="status" aria-label="Security scan statistics">
+      <div class="hud-stat-pill" title="Total files processed by the security engine">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        <span>Scanned:</span>
+        <strong id="hud-scanned" aria-label="Files scanned count">0</strong>
+      </div>
+      <div class="hud-stat-pill clean" title="Files verified as clean — no threats detected">
+        <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+        <span>Clean:</span>
+        <strong id="hud-clean" aria-label="Clean files count">0</strong>
+      </div>
+      <div class="hud-stat-pill suspicious" title="Files flagged with suspicious heuristic indicators">
+        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+        <span>Suspicious:</span>
+        <strong id="hud-suspicious" aria-label="Suspicious files count">0</strong>
+      </div>
+      <div class="hud-stat-pill malicious" title="Files quarantined due to malicious threat indicators">
+        <i class="fa-solid fa-box-archive" aria-hidden="true"></i>
+        <span>Quarantined:</span>
+        <strong id="hud-quarantined" aria-label="Quarantined files count">0</strong>
+      </div>
+    </div>
+
+    <!-- Execution Controls & Actions -->
+    <div class="header-controls">
+      <!-- Quick Test Simulation Trigger Button -->
+      <div class="simulation-quick-trigger">
+        <button class="btn btn-primary-glow" id="btn-quick-simulate" title="Create a test file in the monitored directory to trigger the real-time scan pipeline">
+          <i class="fa-solid fa-bolt" aria-hidden="true"></i> Simulate Threat
+        </button>
+        <div class="simulation-dropdown" id="simulation-dropdown" role="menu" aria-label="Threat simulation options">
+          <button class="dropdown-item" data-sim-type="clean" role="menuitem">
+            <i class="fa-solid fa-file-pdf" style="color: var(--accent-emerald);" aria-hidden="true"></i> Clean PDF — Low Entropy, No Flags
+          </button>
+          <button class="dropdown-item" data-sim-type="suspicious" role="menuitem">
+            <i class="fa-solid fa-file-word" style="color: var(--accent-amber);" aria-hidden="true"></i> Macro DOCX — VBA AutoExec, PowerShell
+          </button>
+          <button class="dropdown-item" data-sim-type="ransomware" role="menuitem">
+            <i class="fa-solid fa-skull" style="color: var(--accent-pink);" aria-hidden="true"></i> Ransomware — High Entropy, .pdf.exe
+          </button>
+        </div>
+      </div>
+
+      <!-- Security Scanner Live Feed Button -->
+      <button class="btn btn-feed" id="btn-security-feed" title="Open the real-time file scan history, Shannon entropy analysis, and quarantine vault">
+        <i class="fa-solid fa-shield-cat" aria-hidden="true"></i> Threat Vault (<span id="scanned-count-badge" aria-label="Total scans">0</span>)
+      </button>
+
+      <!-- Mode Toggle: Flow Builder vs Feedback Annotation -->
+      <div class="mode-toggle">
+        <div class="mode-btn active" id="mode-flow-btn" title="Visual Threat Mitigation Canvas Mode">
+          <i class="fa-solid fa-diagram-project"></i> Security Canvas
+        </div>
+        <div class="mode-btn" id="mode-annotation-btn" title="Visual Task & Annotation Pin Mode">
+          <i class="fa-solid fa-comment-dots"></i> Feedback (<span id="pin-count">0</span>)
+        </div>
+      </div>
+
+      <!-- Playback Actions -->
+      <div class="btn-group">
+        <button class="btn btn-success" id="btn-run-flow" title="Run Threat Mitigation Simulation">
+          <i class="fa-solid fa-play"></i> Run Flow
+        </button>
+        <button class="btn" id="btn-step-flow" title="Execute Next Step">
+          <i class="fa-solid fa-forward-step"></i> Step
+        </button>
+        <button class="btn" id="btn-pause-flow" title="Pause Simulation" disabled>
+          <i class="fa-solid fa-pause"></i> Pause
+        </button>
+        <button class="btn btn-danger" id="btn-reset-flow" title="Reset All Node States">
+          <i class="fa-solid fa-rotate-left"></i> Reset
+        </button>
+      </div>
+
+      <!-- Blueprints & JSON File Actions -->
+      <div class="btn-group">
+        <button class="btn" id="btn-templates" title="Browse Security Flow Templates">
+          <i class="fa-solid fa-shield-halved"></i> Blueprints
+        </button>
+        <button class="btn" id="btn-export-json" title="Export Security Blueprint JSON">
+          <i class="fa-solid fa-download"></i> Export
+        </button>
+        <button class="btn" id="btn-import-trigger" title="Import Security Blueprint">
+          <i class="fa-solid fa-file-import"></i> Import
+        </button>
+        <input type="file" id="file-import-input" accept=".json" style="display: none;">
+      </div>
+    </div>
+  </header>
+
+  <!-- =========================================
+       2. LEFT SIDEBAR (SECURITY NODE PALETTE)
+       ========================================= -->
+  <aside class="sidebar glass-panel" id="sidebar-panel" role="complementary" aria-label="Security node palette">
+    <div class="sidebar-header">
+      <div class="sidebar-header-title">
+        <i class="fa-solid fa-puzzle-piece" aria-hidden="true"></i>
+        <span>Security Modules</span>
+      </div>
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
+        <input type="text" id="palette-search" class="search-input" placeholder="Search watchers, heuristics, actions..." aria-label="Filter security node palette">
+      </div>
+    </div>
+
+    <div class="palette-container" id="palette-container">
+      
+      <!-- Category 1: Security Triggers & Watchers -->
+      <div class="palette-category">
+        <div class="category-title">
+          <i class="fa-solid fa-radar"></i> Security Triggers &amp; Watchers
+        </div>
+        
+        <div class="palette-node-item" draggable="true" data-type="trigger_file_download">
+          <div class="node-icon-box icon-trigger" style="background: linear-gradient(135deg, #10b981, #059669);"><i class="fa-solid fa-shield-virus"></i></div>
+          <div class="palette-node-info">
+            <div class="palette-node-name">Downloads Watcher</div>
+            <div class="palette-node-desc">Fires on real-time file download scan</div>
+          </div>
+        </div>
+
+        <div class="palette-node-item" draggable="true" data-type="trigger_manual_file">
+          <div class="node-icon-box icon-trigger"><i class="fa-solid fa-file-arrow-up"></i></div>
+          <div class="palette-node-info">
+            <div class="palette-node-name">Manual File Drop</div>
+            <div class="palette-node-desc">Drag &amp; drop file scan trigger</div>
+          </div>
+        </div>
+
+        <div class="palette-node-item" draggable="true" data-type="trigger_dir_audit">
+          <div class="node-icon-box icon-trigger"><i class="fa-solid fa-folder-tree"></i></div>
+          <div class="palette-node-info">
+            <div class="palette-node-name">Batch Folder Audit</div>
+            <div class="palette-node-desc">Scans existing files in target folder</div>
+          </div>
+        </div>
+
+        <div class="palette-node-item" draggable="true" data-type="trigger_security_webhook">
+          <div class="node-icon-box icon-trigger"><i class="fa-solid fa-globe"></i></div>
+          <div class="palette-node-info">
+            <div class="palette-node-name">Security Webhook</div>
+            <div class="palette-node-desc">Ingests scan payload from endpoint</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Category 2: Heuristics & Threat Intelligence -->
+      <div class="palette-category">
+        <div class="category-title">
+          <i class="fa-solid fa-brain"></i> Heuristics &amp; Threat AI
+        </div>
+
+        <div class="palette-node-item" draggable="true" data-type="ai_entropy_heuristics">
+          <div class="node-icon-box icon-ai"><i class="fa-solid fa-chart-simple"></i></div>
+          <div class="palette-node-info">
+            <div class="palette-node-name">Shannon Entropy Scanner</div>
+            <div class="palette-node-desc">Detects encrypted ransomware &amp; packing</div>
+          </div>
+        </div>
+
+        <div class="palette-node-item" draggable="true" data-type="ai_double_extension">
+          <div class="node-icon-box icon-ai"><i class="fa-solid fa-mask"></i></div>
+          <div class="palette-node-info">
+            <div class="palette-node-name">Double Extension Audit</div>
+            <div class="palette-node-desc">Detects masquerading .pdf.exe files</div>
+          </div>
+        </div>
+
+        <div class="palette-node-item" draggable="true" data-type="ai_gemini_threat">
+          <div class="node-icon-box icon-ai" style="background: linear-gradient(135deg, #7000ff, #00f2fe);"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+          <div class="palette-node-info">
+            <div class="palette-node-name">Gemini Threat Classifier</div>
+            <div class="palette-node-desc">AI threat score &amp; malware report</div>
+          </div>
+        </div>
+
+        <div class="palette-node-item" draggable="true" data-type="ai_hash_sha256">
+          <div class="node-icon-box icon-ai"><i class="fa-solid fa-fingerprint"></i></div>
+          <div class="palette-node-info">
+            <div class="palette-node-name">SHA-256 Hash Lookup</div>
+            <div class="palette-node-desc">Computes hash &amp; checks threat DB</div>
+          </div>
+        </div>
+
+        <div class="palette-node-item" draggable="true" data-type="ai_header_pe">
+          <div class="node-icon-box icon-ai"><i class="fa-solid fa-file-code"></i></div>
+          <div class="palette-node-info">
+            <div class="palette-node-name">MZ / PE Header Audit</div>
+            <div class="palette-node-desc">Analyzes executable header risk</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Category 3: Incident Response & Mitigation -->
+      <div class="palette-category">
+        <div class="category-title">
+          <i class="fa-solid fa-shield-halved"></i> Mitigation &amp; Response
+        </div>
+
+        <div class="palette-node-item" draggable="true" data-type="action_quarantine">
+          <div class="node-icon-box icon-action" style="background: linear-gradient(135deg, #ef4444, #dc2626);"><i class="fa-solid fa-box-archive"></i></div>
+          <div class="palette-node-info">
+            <div class="palette-node-name">Quarantine Vault</div>
+            <div class="palette-node-desc">Isolates &amp; moves file to ./quarantine</div>
+          </div>
+        </div>
+
+        <div class="palette-node-item" draggable="true" data-type="action_shred">
+          <div class="node-icon-box icon-action"><i class="fa-solid fa-dumpster-fire"></i></div>
+          <div class="palette-node-info">
+            <div class="palette-node-name">File Shredder</div>
+            <div class="palette-node-desc">Permanently deletes malicious file</div>
+          </div>
+        </div>
+
+        <div class="palette-node-item" draggable="true" data-type="action_sandbox">
+          <div class="node-icon-box icon-action"><i class="fa-solid fa-cubes"></i></div>
+          <div class="palette-node-info">
+            <div class="palette-node-name">Sandbox Execution</div>
+            <div class="palette-node-desc">Defers file to isolated VM container</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Category 4: Threat Logic & Rules -->
+      <div class="palette-category">
+        <div class="category-title">
+          <i class="fa-solid fa-code-fork"></i> Threat Logic &amp; Control
+        </div>
+
+        <div class="palette-node-item" draggable="true" data-type="logic_threat_eval">
+          <div class="node-icon-box icon-logic"><i class="fa-solid fa-diamond"></i></div>
+          <div class="palette-node-info">
+            <div class="palette-node-name">Threat Level Evaluator</div>
+            <div class="palette-node-desc">Branch execution by threat risk</div>
+          </div>
+        </div>
+
+        <div class="palette-node-item" draggable="true" data-type="logic_risk_gate">
+          <div class="node-icon-box icon-logic"><i class="fa-solid fa-filter"></i></div>
+          <div class="palette-node-info">
+            <div class="palette-node-name">Risk Score Filter</div>
+            <div class="palette-node-desc">Passes files with score &gt; threshold</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Category 5: SOC Alerts & Logs -->
+      <div class="palette-category">
+        <div class="category-title">
+          <i class="fa-solid fa-paper-plane"></i> SOC Alerts &amp; Logs
+        </div>
+
+        <div class="palette-node-item" draggable="true" data-type="output_soc_alert">
+          <div class="node-icon-box icon-output" style="background: linear-gradient(135deg, #f59e0b, #d97706);"><i class="fa-solid fa-bell"></i></div>
+          <div class="palette-node-info">
+            <div class="palette-node-name">SOC Slack Alert</div>
+            <div class="palette-node-desc">Send alert to #cyber-sec channel</div>
+          </div>
+        </div>
+
+        <div class="palette-node-item" draggable="true" data-type="output_disk_log">
+          <div class="node-icon-box icon-output"><i class="fa-solid fa-hard-drive"></i></div>
+          <div class="palette-node-info">
+            <div class="palette-node-name">Security Disk Logger</div>
+            <div class="palette-node-desc">Appends audit record to server log</div>
+          </div>
+        </div>
+
+        <div class="palette-node-item" draggable="true" data-type="output_desktop_toast">
+          <div class="node-icon-box icon-output"><i class="fa-solid fa-desktop"></i></div>
+          <div class="palette-node-info">
+            <div class="palette-node-name">Desktop Threat Notification</div>
+            <div class="palette-node-desc">Displays immediate OS alert toast</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- =========================================
+       3. CENTRAL CANVAS VIEWPORT
+       ========================================= -->
+  <main class="canvas-viewport" id="canvas-viewport" role="main" aria-label="Security threat mitigation canvas">
+    
+    <!-- Canvas World Container for Panning & Zooming -->
+    <div id="canvas-world">
+      <!-- SVG Wire Connection Layer -->
+      <svg id="connections-svg" aria-hidden="true">
+        <defs>
+          <filter id="wire-glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+        <g id="wires-group"></g>
+        <path id="draft-wire-path" class="draft-wire" d="" style="display: none;"></path>
+        <g id="data-packets-group"></g>
+      </svg>
+
+      <!-- Rendered Node Cards Layer -->
+      <div id="nodes-container"></div>
+
+      <!-- Rendered Feedback Annotations Layer -->
+      <div id="annotations-container"></div>
+    </div>
+
+    <!-- Canvas Onboarding Watermark -->
+    <div class="canvas-watermark" id="canvas-watermark">
+      <div class="watermark-icon"><i class="fa-solid fa-shield-virus"></i></div>
+      <div class="watermark-title">OK Sentinel Security Canvas</div>
+      <div class="watermark-subtitle">Drag security modules from the left palette to build threat mitigation pipelines.<br>Connect output ports → input ports to wire data flow between nodes.</div>
+      <div class="watermark-shortcuts">
+        <span><kbd>Scroll</kbd> Zoom</span>
+        <span><kbd>Drag</kbd> Pan canvas</span>
+        <span><kbd>Click node</kbd> Configure</span>
+      </div>
+    </div>
+
+    <!-- Floating Canvas Controls -->
+    <div class="canvas-floating-controls">
+      <button class="btn-icon" id="btn-zoom-in" title="Zoom In"><i class="fa-solid fa-plus"></i></button>
+      <span class="zoom-level-text" id="zoom-text">100%</span>
+      <button class="btn-icon" id="btn-zoom-out" title="Zoom Out"><i class="fa-solid fa-minus"></i></button>
+      <button class="btn-icon" id="btn-zoom-reset" title="Reset Pan & Zoom"><i class="fa-solid fa-expand"></i></button>
+      <div style="width: 1px; height: 16px; background: var(--panel-border);"></div>
+      <button class="btn-icon" id="btn-toggle-grid" title="Snap to Grid"><i class="fa-solid fa-border-all"></i></button>
+      <button class="btn-icon" id="btn-clear-canvas" title="Clear Canvas"><i class="fa-solid fa-trash-can"></i></button>
+    </div>
+
+    <!-- Canvas Minimap -->
+    <div class="minimap-wrapper">
+      <canvas id="minimap-canvas"></canvas>
+    </div>
+  </main>
+
+  <!-- =========================================
+       4. RIGHT INSPECTOR & CONFIG PANEL
+       ========================================= -->
+  <aside class="inspector glass-panel" id="inspector-panel" role="complementary" aria-label="Security node inspector">
+    <div class="inspector-header">
+      <h3 style="font-size: 14px; font-weight: 700;" id="inspector-title">
+        <i class="fa-solid fa-sliders" style="color: var(--accent-cyan); margin-right: 6px;" aria-hidden="true"></i>Security Node Inspector
+      </h3>
+      <button class="btn-icon" id="btn-close-inspector" title="Collapse inspector panel" aria-label="Close inspector"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <!-- Inspector Tab Bar -->
+    <div class="inspector-tabs">
+      <button class="tab-btn active" data-tab="config"><i class="fa-solid fa-gear" aria-hidden="true"></i> Config</button>
+      <button class="tab-btn" data-tab="payload"><i class="fa-solid fa-code" aria-hidden="true"></i> Payload</button>
+      <button class="tab-btn" data-tab="annotations"><i class="fa-solid fa-thumbtack" aria-hidden="true"></i> Pins (<span id="pins-tab-count">0</span>)</button>
+    </div>
+
+    <div class="inspector-content">
+      
+      <!-- Tab 1: Configuration -->
+      <div class="tab-content active" id="tab-config">
+        <div class="empty-state" id="config-empty-state">
+          <i class="fa-solid fa-shield-halved empty-state-icon" style="color: var(--accent-cyan);" aria-hidden="true"></i>
+          <p style="max-width: 240px; line-height: 1.5;">Click any security node on the canvas to configure its <strong>heuristic thresholds</strong>, <strong>threat evaluation rules</strong>, and <strong>mitigation actions</strong>.</p>
+        </div>
+
+        <div id="config-form-container" style="display: none; flex-direction: column; gap: 14px;">
+          <div class="form-group">
+            <label class="form-label" for="node-name-input">Node Label</label>
+            <input type="text" id="node-name-input" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="node-desc-input">Description</label>
+            <input type="text" id="node-desc-input" class="form-input">
+          </div>
+
+          <div id="dynamic-node-controls" style="display: flex; flex-direction: column; gap: 14px;">
+            <!-- Dynamic inputs based on node type rendered via JavaScript -->
+          </div>
+
+          <div style="margin-top: 10px; border-top: 1px solid var(--panel-border); padding-top: 12px;">
+            <button class="btn btn-danger" id="btn-delete-node" style="width: 100%; justify-content: center;">
+              <i class="fa-solid fa-trash"></i> Delete Selected Node
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Live Security Payload Inspector -->
+      <div class="tab-content" id="tab-payload">
+        <div class="form-group">
+          <label class="form-label"><i class="fa-solid fa-arrow-right-to-bracket" style="color: var(--accent-blue); margin-right: 4px;" aria-hidden="true"></i>Incoming File Metadata, Hashes &amp; Entropy</label>
+          <pre class="payload-viewer" id="payload-input-viewer">// Select a node then run the flow to see
+// incoming file scan metadata here:
+//   - filename, extension, size
+//   - SHA-256 cryptographic hash
+//   - Shannon entropy (0.0–8.0)
+//   - Heuristic risk flags</pre>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label"><i class="fa-solid fa-arrow-right-from-bracket" style="color: var(--accent-emerald); margin-right: 4px;" aria-hidden="true"></i>Heuristic Analysis &amp; Threat Classification Result</label>
+          <pre class="payload-viewer" id="payload-output-viewer">// After execution, this pane shows the
+// node's output: threat level, risk score,
+// AI classification, quarantine receipts, etc.</pre>
+        </div>
+      </div>
+
+      <!-- Tab 3: Canvas Feedback Pins -->
+      <div class="tab-content" id="tab-annotations">
+        <div style="font-size: 12px; color: var(--text-muted);">
+          Click anywhere on canvas in <strong>Feedback Mode</strong> to place a security audit pin.
+        </div>
+        
+        <div id="annotations-list" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+          <!-- Rendered feedback pins list -->
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- =========================================
+       5. BOTTOM EXECUTION CONSOLE (SOC LOG STREAM)
+       ========================================= -->
+  <section class="console-panel" id="console-panel" role="log" aria-label="Security operations console">
+    <div class="console-header">
+      <div class="console-title">
+        <i class="fa-solid fa-terminal" style="color: var(--accent-cyan);" aria-hidden="true"></i> SOC Security Log — Real-Time Threat Stream
+        <span class="console-watcher-badge">
+          <span class="console-watcher-dot" aria-hidden="true"></span> File Watcher Daemon Active
+        </span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button class="btn" id="btn-view-server-log" style="padding: 3px 8px; font-size: 11px; color: var(--accent-cyan); border-color: rgba(0, 242, 254, 0.3);" title="View the persistent server.log file stored on disk">
+          <i class="fa-solid fa-file-lines" aria-hidden="true"></i> Server Disk Log
+        </button>
+        <button class="btn" id="btn-clear-server-log" style="padding: 3px 8px; font-size: 11px; color: var(--accent-pink); border-color: rgba(244, 63, 94, 0.3);" title="Purge backend server.log and server_logs.jsonl">
+          <i class="fa-solid fa-trash-can" aria-hidden="true"></i> Purge Server Log
+        </button>
+        <button class="btn" id="btn-clear-console" style="padding: 3px 8px; font-size: 11px;" title="Clear the in-browser console view (does not affect server logs)">Clear View</button>
+        <button class="btn-icon" id="btn-toggle-console" title="Toggle Console Height" aria-label="Toggle console panel"><i class="fa-solid fa-chevron-down"></i></button>
+      </div>
+    </div>
+
+    <div class="console-logs" id="console-logs" aria-live="polite">
+      <!-- Initial log entries are populated by JavaScript on load -->
+    </div>
+  </section>
+
+</div>
+
+<!-- =========================================
+     SERVER LOG VIEWER MODAL
+     ========================================= -->
+<div class="modal-overlay" id="server-log-modal">
+  <div class="modal-card" style="width: 800px;">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa-solid fa-server" style="color: var(--accent-cyan);"></i> Backend Security Audit Log (logs/server.log)</div>
+      <button class="btn-icon" id="btn-close-server-log-modal"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body" style="padding: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <span style="font-size: 12px; color: var(--text-muted);">Real-time security log entries persisted on backend disk server:</span>
+        <button class="btn" id="btn-refresh-server-log" style="padding: 4px 10px; font-size: 11px;"><i class="fa-solid fa-rotate"></i> Refresh Logs</button>
+      </div>
+      <pre id="server-log-content" style="background: rgba(5, 7, 12, 0.95); border: 1px solid var(--panel-border); border-radius: 8px; padding: 14px; font-family: var(--font-mono); font-size: 11px; color: #6ee7b7; max-height: 450px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;">Loading server logs...</pre>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================
+     LIVE SECURITY FILE SCANNER FEED & THREAT VAULT MODAL
+     ========================================= -->
+<div class="modal-overlay" id="security-feed-modal">
+  <div class="modal-card" style="width: 880px;">
+    <div class="modal-header">
+      <div class="modal-title">
+        <i class="fa-solid fa-shield-virus" style="color: var(--accent-emerald);" aria-hidden="true"></i> Threat Vault — Live File Scan Stream &amp; Quarantine History
+      </div>
+      <button class="btn-icon" id="btn-close-security-feed-modal" aria-label="Close threat vault"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body" style="padding: 18px;">
+      <!-- Watcher Status Box -->
+      <div class="vault-status-banner">
+        <div>
+          <div class="vault-status-title">
+            <i class="fa-solid fa-circle-check" aria-hidden="true"></i> Background File Watcher Daemon — Active &amp; Scanning
+          </div>
+          <div class="vault-status-details" id="watcher-monitored-dirs">
+            <span><i class="fa-solid fa-folder-open" aria-hidden="true"></i> C:\Users\Mande\Downloads</span>
+            <span><i class="fa-solid fa-folder" aria-hidden="true"></i> ./monitored_downloads</span>
+            <span><i class="fa-solid fa-lock" aria-hidden="true"></i> Quarantine: ./quarantine</span>
+          </div>
+        </div>
+        
+        <!-- Simulation buttons inside modal -->
+        <div style="display: flex; gap: 8px;">
+          <button class="btn" id="btn-sim-clean-modal" style="padding: 5px 10px; font-size: 11px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: var(--accent-emerald);" title="Generate a benign PDF in monitored_downloads to test clean-file flow">
+            <i class="fa-solid fa-check" aria-hidden="true"></i> Simulate Clean PDF
+          </button>
+          <button class="btn" id="btn-sim-ransomware-modal" style="padding: 5px 10px; font-size: 11px; background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.4); color: var(--accent-pink);" title="Generate a high-entropy .pdf.exe in monitored_downloads to test ransomware quarantine">
+            <i class="fa-solid fa-skull" aria-hidden="true"></i> Simulate Ransomware
+          </button>
+        </div>
+      </div>
+
+      <!-- Scanned Files History Table -->
+      <h4 style="font-size: 13px; font-weight: 700; margin-bottom: 10px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-clock-rotate-left" style="color: var(--accent-cyan);" aria-hidden="true"></i> Scan History — Shannon Entropy &amp; Heuristic Analysis
+      </h4>
+      <div id="security-scan-history-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 420px; overflow-y: auto;">
+        <div class="vault-empty-state">
+          <i class="fa-solid fa-file-circle-question" aria-hidden="true"></i>
+          <p>No files scanned yet. Drop files into your <strong>Downloads</strong> folder or click <strong>Simulate</strong> above to trigger real-time analysis.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================
+     SECURITY BLUEPRINTS & TEMPLATES MODAL
+     ========================================= -->
+<div class="modal-overlay" id="templates-modal">
+  <div class="modal-card" style="width: 820px;">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa-solid fa-shield-halved" style="color: var(--accent-cyan);" aria-hidden="true"></i> Security Blueprints — Pre-Built Threat Mitigation Pipelines</div>
+      <button class="btn-icon" id="btn-close-modal" aria-label="Close blueprints modal"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">Select a blueprint to instantly deploy a fully-wired threat mitigation pipeline onto the canvas. Each blueprint connects real-time file watchers → heuristic scanners → threat evaluators → automated response actions.</p>
+      <div class="template-grid">
+        
+        <div class="template-card" data-template="download_security">
+          <div class="template-icon" style="color: var(--accent-emerald);"><i class="fa-solid fa-shield-virus"></i></div>
+          <div class="template-badge">7 Nodes • Full Pipeline</div>
+          <div class="template-title">Download Watcher → Entropy Scan → Auto Quarantine</div>
+          <div class="template-desc">Monitors Downloads folder in real-time → calculates Shannon entropy → Gemini AI threat classification → branches on threat level → quarantines malware + SOC Slack alert, or logs clean audit.</div>
+        </div>
+
+        <div class="template-card" data-template="ransomware_detector">
+          <div class="template-icon" style="color: var(--accent-pink);"><i class="fa-solid fa-skull-crossbones"></i></div>
+          <div class="template-badge">5 Nodes • Detection Focus</div>
+          <div class="template-title">Ransomware Detector — High Entropy + Extension Spoof</div>
+          <div class="template-desc">Targets high-entropy payloads (&gt; 7.6 bits/byte) indicating AES encryption, PE header masquerading, and double-extension tricks (.pdf.exe) → auto file shredding.</div>
+        </div>
+
+        <div class="template-card" data-template="hash_soc_audit">
+          <div class="template-icon" style="color: var(--accent-cyan);"><i class="fa-solid fa-fingerprint"></i></div>
+          <div class="template-badge">4 Nodes • Audit Trail</div>
+          <div class="template-title">SHA-256 Hash Audit → SOC Incident Dispatcher</div>
+          <div class="template-desc">Computes cryptographic SHA-256 fingerprints for every download → cross-references known malware hash DB → dispatches SOC incident alert with full audit trail to backend log.</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="index.js"></script>
+</body>
+</html>
